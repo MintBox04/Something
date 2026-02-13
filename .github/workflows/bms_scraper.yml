@@ -58,10 +58,9 @@ jobs:
 
       - name: Move Artifacts to Correct Folder
         run: |
-          # The artifacts preserve the directory structure 'daily/data/...'
-          # So 'downloaded_artifacts' will contain 'daily/data/20260214/...'
-          # We just need to copy them over to the root.
-          cp -R downloaded_artifacts/daily .
+          mkdir -p daily/data
+          # Copy everything from downloaded_artifacts (which contains the DATE_CODE dir) to daily/data
+          cp -R downloaded_artifacts/* daily/data/
           rm -rf downloaded_artifacts
 
       - name: Commit and Push
