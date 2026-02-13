@@ -25,7 +25,7 @@ CUTOFF_MINUTES = 200
 IST = timezone(timedelta(hours=5, minutes=30))
 DATE_CODE = (datetime.now(IST) + timedelta(days=1)).strftime("%Y%m%d")
 
-BASE_DIR = os.path.join("daily", "data", DATE_CODE)
+BASE_DIR = os.path.join("advance", "data", DATE_CODE)
 LOG_DIR = os.path.join(BASE_DIR, "logs")
 os.makedirs(LOG_DIR, exist_ok=True)
 

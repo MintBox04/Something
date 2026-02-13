@@ -38,7 +38,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: bms-data-shard-${{ matrix.shard }}
-          path: daily/data/
+          path: advance/data/
 
   merge-and-commit:
     needs: run-shard
@@ -49,6 +49,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install Merge Dependencies
+        run: |
+          pip install pytz
+
       - name: Download All Artifacts
         uses: actions/download-artifact@v4
         with:
@@ -56,19 +65,21 @@ jobs:
           path: downloaded_artifacts
           merge-multiple: true
 
-      - name: Move Artifacts to Correct Folder
+      - name: Organize Data and Combine
         run: |
-          mkdir -p daily/data
-          # Copy everything from downloaded_artifacts (which contains the DATE_CODE dir) to daily/data
-          cp -R downloaded_artifacts/* daily/data/
+          mkdir -p advance/data
+          # Copy from downloaded artifacts to advance/data
+          cp -R downloaded_artifacts/* advance/data/
           rm -rf downloaded_artifacts
+          
+          # Run combination script
+          python combine_shards.py
 
       - name: Commit and Push
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
-          git add daily/data/
-          git commit -m "Auto-commit: Scraped BMS data from multiple shards [skip ci]" || echo "No changes to commit"
+          git add advance/ || true
+          git commit -m "Auto-commit: Scraped BMS data and combined logs [skip ci]" || echo "No changes to commit"
           git pull --rebase
           git push
-
