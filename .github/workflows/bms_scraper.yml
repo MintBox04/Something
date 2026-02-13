@@ -1,0 +1,75 @@
+name: Run BMS Scraper
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 * * * *' # Run at every hour 0 minutes
+
+jobs:
+  run-shard:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install playwright
+          playwright install chromium
+          # Install any other deps if needed (e.g. requests, though not used in current script)
+
+      - name: Run Shard ${{ matrix.shard }}
+        run: |
+          xvfb-run python run_bms.py ${{ matrix.shard }}
+
+      - name: Upload Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bms-data-shard-${{ matrix.shard }}
+          path: daily/data/
+
+  merge-and-commit:
+    needs: run-shard
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download All Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: bms-data-shard-*
+          path: downloaded_artifacts
+          merge-multiple: true
+
+      - name: Move Artifacts to Correct Folder
+        run: |
+          # The artifacts preserve the directory structure 'daily/data/...'
+          # So 'downloaded_artifacts' will contain 'daily/data/20260214/...'
+          # We just need to copy them over to the root.
+          cp -R downloaded_artifacts/daily .
+          rm -rf downloaded_artifacts
+
+      - name: Commit and Push
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git add daily/data/
+          git commit -m "Auto-commit: Scraped BMS data from multiple shards [skip ci]" || echo "No changes to commit"
+          git pull --rebase
+          git push
+
