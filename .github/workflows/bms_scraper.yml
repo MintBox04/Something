@@ -11,7 +11,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4, 5, 6, 7, 8, 9]
+        shard: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
     steps:
       - name: Checkout code
@@ -20,18 +20,23 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: '3.12.1'
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install playwright
+          pip install playwright cloudscraper aiohttp
           playwright install chromium
           # Install any other deps if needed (e.g. requests, though not used in current script)
 
       - name: Run Shard ${{ matrix.shard }}
+        shell: bash
         run: |
-          xvfb-run python run_bms.py ${{ matrix.shard }}
+          if [ "${{ matrix.shard }}" == "10" ]; then
+            python dis.py
+          else
+            xvfb-run python run_bms.py ${{ matrix.shard }}
+          fi
 
       - name: Upload Artifacts
         if: always()
@@ -52,7 +57,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: '3.12.1'
 
       - name: Install Merge Dependencies
         run: |
